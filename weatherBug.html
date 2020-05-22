@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <title>weather</title>
+  <style media="screen">
+    body, html {
+    height: 100%;
+    display: grid;
+    font-family: sans-serif;
+    background: grey;
+  }
+      #weatherBug{
+        border: 6px solid rgb(255, 19, 224);
+        border-radius: 1em;
+        background-color: purple;
+        width: 14em;
+        padding: 1em;
+        color: white;
+        font-family: sans-serif;
+
+      }
+      main { /* thing to center */
+        margin: auto;
+        padding: 1em;
+        background-color: #eee;
+      }
+          button{
+        display: block;
+        font-size: 1em;
+      }
+      #iconImage{
+        display:block;
+      }
+    </style>
+</head>
+
+<body>
+  <main>
+    <button id="findLocation">Show my location</button>
+    <p id="status">No location yet</p>
+    <div id="weatherBug">
+      <h1>Weather Bug</h1>
+      <p>No Weather Data</p>
+      <img id="iconImage" src="" alt="current weather image icon" height = "100" width = "100">
+    </div>
+  </main>
+  <script src="openWeatherAPIkey.js" charset="utf-8"></script>
+  <script type="text/javascript">
+    //////////////////////geoLocation
+    document.querySelector('#findLocation').addEventListener('click', geoLookUp, false)
+    const iconImage = document.querySelector('#iconImage')
+    if(iconImage.getAttribute('src')==""){
+      iconImage.style.visibility = 'hidden';
+    }
+
+    function geoLookUp() {
+      const status = document.querySelector('#status')
+
+      function success(position) {
+        const latitude = position.coords.latitude
+        const longitude = position.coords.longitude
+        // status.textContent = `lat: ${latitude}, lon: ${longitude}`
+        status.textContent = 'lat: 44.945.220, lon: -92.883132'
+        setWeather(latitude, longitude)
+      }
+
+      function error(err) {
+        status.textContent = `Unable to retrieve your location. Error: ${err.code}. ${err.message}`
+      }
+
+      if (!navigator.geolocation) {
+        status.textContent = "Geolocation is not supported or allowed by your browser"
+      } else {
+        status.textContent = "Locating..."
+        navigator.geolocation.getCurrentPosition(success, error)
+      }
+    }
+    //////////////////////weather bug
+    function setWeather(latitude, longitude){
+      const p = document.querySelector('#weatherBug p')
+
+      let openWeatherData = {}
+      let xhr = new XMLHttpRequest()
+      xhr.open('GET', `http://api.openweathermap.org/data/2.5/weather?zip=55445,us&appid=${openWeatherKey}&units=imperial`)
+      // xhr.open('GET', `http://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${openWeatherKey}&units=imperial`)
+      // lat={lat}&lon={lon}45.0968573,-93.399877
+      xhr.responseType = 'text'
+
+      xhr.addEventListener('load', function() {
+        if (xhr.status === 200) {
+          p.textContent = "loading..."
+          openWeatherData = JSON.parse(xhr.responseText)
+          populateWeatherInfo(openWeatherData, p)
+        } else {
+          p.textContent = "error: " + xhr.status
+        }
+      }, false)
+
+      xhr.send()
+    }
+
+    function populateWeatherInfo(openWeatherData, p) {
+      //name, temp, wind, time
+      const location = openWeatherData.name
+      const temp = Math.round(openWeatherData.main.temp)
+      const wind = Math.round(openWeatherData.wind.speed)
+      const time = new Date(openWeatherData.dt * 1000)
+      const hrs = time.getHours()
+      let mins = time.getMinutes()
+      const icon = openWeatherData.weather[0].icon
+      iconImage.setAttribute('src', `http://openweathermap.org/img/wn/${icon}@2x.png`)
+      // http://openweathermap.org/img/wn/10d@2x.png
+      if(iconImage.getAttribute('src')!=""){
+        iconImage.style.visibility = 'visible';
+      }
+      console.log(icon);
+
+      let timeString = ''
+
+      if (mins < 10) {
+        mins = `0${mins}`
+      }
+      if (hrs === 12) {
+        timeString = `12:${mins} PM`
+      } else if (hrs > 12) {
+        timeString = `${hrs - 12}:${mins} PM`
+      } else if (hrs === 0) {
+        timeString = `12:${mins} AM`
+      } else {
+        timeString = `${hrs}:${mins} AM`
+      }
+
+      const str = `${location}  ${temp}&#0176;<br>wind: ${wind}mph<br>${timeString}`
+      p.innerHTML = str
+    }
+  </script>
+</body>
+
+
+
+
+
+
+
+
+
+
+</html>
